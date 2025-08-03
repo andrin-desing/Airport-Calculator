@@ -120,26 +120,12 @@
             display: flex;
             align-items: center;
         }
-        /* Runway-Mittelstreifen-Stil */
-        #runway-centerline {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: white;
-            transform: translateY(-50%);
-            border-radius: 1px;
+        
+        /* Entfernen des Mittelstreifens und der kleinen Markierungen */
+        #runway-centerline, .runway-marker {
+            display: none;
         }
-        /* Stil für die visuellen Marker */
-        .runway-marker {
-            position: absolute;
-            top: 50%;
-            height: 100%;
-            width: 5px;
-            background-color: white;
-            transform: translateY(-50%);
-        }
+        
         #required-distance {
             position: absolute;
             left: 0;
@@ -347,19 +333,8 @@
             <div class="mt-4">
                 <p class="text-sm font-medium text-theme-text mb-2">Startstrecke (benötigt vs. verfügbar)</p>
                 <div id="runway-visual-container">
-                    <div id="runway-centerline"></div>
-                    <div class="runway-marker" style="left: 0%;"></div>
-                    <div class="runway-marker" style="left: 10%;"></div>
-                    <div class="runway-marker" style="left: 20%;"></div>
-                    <div class="runway-marker" style="left: 30%;"></div>
-                    <div class="runway-marker" style="left: 40%;"></div>
-                    <div class="runway-marker" style="left: 50%;"></div>
-                    <div class="runway-marker" style="left: 60%;"></div>
-                    <div class="runway-marker" style="left: 70%;"></div>
-                    <div class="runway-marker" style="left: 80%;"></div>
-                    <div class="runway-marker" style="left: 90%;"></div>
-                    <div class="runway-marker" style="right: 0%;"></div>
-                    <div id="required-distance" class="bg-theme-accent">
+                    <!-- Weiße Linien entfernt -->
+                    <div id="required-distance">
                         <span id="runway-info" class="text-white text-xs font-bold absolute left-2 text-shadow-sm"></span>
                     </div>
                     <span id="total-runway-info" class="absolute right-2 text-xs text-white font-bold text-shadow-sm"></span>
@@ -645,25 +620,24 @@
             
             let colorClass = 'bg-theme-progress-good';
             
-            if (percentage > 90) {
-                colorClass = 'bg-theme-progress-warning';
+            if (requiredDistance > runwayLength) {
+                 colorClass = '!bg-red-500'; // Rot bei Überschreitung
+                 runwayInfoSpan.textContent = `Piste nicht ausreichend! (${requiredDistance.toFixed(0)}m benötigt)`;
+                 requiredDistanceVisual.classList.add('!bg-red-500');
+            } else if (percentage > 90) {
+                 colorClass = 'bg-theme-progress-warning';
+                 runwayInfoSpan.textContent = `${requiredDistance.toFixed(0)} m (${percentage.toFixed(0)}%) benötigt`;
+                 requiredDistanceVisual.classList.add('bg-theme-progress-warning');
+            } else {
+                 colorClass = 'bg-theme-accent';
+                 runwayInfoSpan.textContent = `${requiredDistance.toFixed(0)} m (${percentage.toFixed(0)}%) benötigt`;
+                 requiredDistanceVisual.classList.add('bg-theme-accent');
             }
-            
-            // Die visuelle Leiste aktualisieren
-            requiredDistanceVisual.style.width = `${percentage}%`;
+
             requiredDistanceVisual.className = `absolute left-0 top-0 h-full transition-width duration-500 ease-in-out flex items-center justify-center relative rounded-md ${colorClass}`;
             
-            // Den Text in der Leiste aktualisieren
-            runwayInfoSpan.textContent = `${requiredDistance.toFixed(0)} m (${percentage.toFixed(0)}%) benötigt`;
-
-            // Die Gesamtinformation der Startbahn aktualisieren
+            requiredDistanceVisual.style.width = `${percentage}%`;
             totalRunwayInfoSpan.textContent = `${runwayLength.toFixed(0)} m verfügbar`;
-            
-            if (requiredDistance > runwayLength) {
-                requiredDistanceVisual.classList.add('!bg-red-500'); // Rot bei Überschreitung
-                runwayInfoSpan.textContent = `Piste nicht ausreichend! (${requiredDistance.toFixed(0)}m benötigt)`;
-                totalRunwayInfoSpan.textContent = `${runwayLength.toFixed(0)} m verfügbar`; // Nur die verfügbare Länge anzeigen
-            }
         }
 
         // Event-Listener für die Flughafensuche
@@ -851,4 +825,3 @@
     </script>
 </body>
 </html>
-
