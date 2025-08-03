@@ -6,36 +6,135 @@
     <title>Flugstart-Rechner</title>
     <!-- Tailwind CSS CDN für das Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        /* Eigene Styles für eine ansprechende Darstellung */
+        /* CSS-Variablen für die verschiedenen Themen */
+        body[data-theme="lush"] {
+            --color-bg: #253D2C;
+            --color-container-bg: #68BA7F;
+            --color-text: #253D2C;
+            --color-title: #2E6F40;
+            --color-accent: #2E6F40;
+            --color-info-bg: #CFFFDC;
+        }
+        /* Die Textfarbe wurde für eine bessere Lesbarkeit auf Weiß geändert */
+        body[data-theme="chili"] {
+            --color-bg: #38000A;
+            --color-container-bg: #CD1C18;
+            --color-text: #ffffff; /* Geändert */
+            --color-title: #9B1313;
+            --color-accent: #9B1313;
+            --color-info-bg: #FFA896;
+        }
+        /* Die Textfarbe wurde für eine bessere Lesbarkeit auf Weiß geändert */
+        body[data-theme="stormy"] {
+            --color-bg: #384959;
+            --color-container-bg: #6A89A7;
+            --color-text: #ffffff; /* Geändert */
+            --color-title: #88BBDF;
+            --color-accent: #88BBDF;
+            --color-info-bg: #BDDDDF;
+        }
+        body[data-theme="mossy"] {
+            --color-bg: #3C4430;
+            --color-container-bg: #8C9B7E;
+            --color-text: #3C4430;
+            --color-title: #647257;
+            --color-accent: #647257;
+            --color-info-bg: #D7E0D0;
+        }
+
+        /* Dynamische Tailwind-Klassen basierend auf den CSS-Variablen */
+        .bg-theme-bg { background-color: var(--color-bg); }
+        .bg-theme-container { background-color: var(--color-container-bg); }
+        .text-theme-text { color: var(--color-text); }
+        .text-theme-title { color: var(--color-title); }
+        .text-theme-accent { color: var(--color-accent); }
+        .bg-theme-accent { background-color: var(--color-accent); }
+        .bg-theme-info { background-color: var(--color-info-bg); }
+        .border-theme-accent { border-color: var(--color-accent); }
+        .focus-theme-accent:focus {
+            --tw-ring-color: var(--color-accent);
+            border-color: var(--color-accent);
+        }
+        .hover-bg-theme-accent:hover { background-color: var(--color-accent); }
+
+        /* Allgemeine Styles */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
         }
-        /* Style für die Suchergebnisliste */
         .search-results {
             max-height: 200px;
             overflow-y: auto;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #d1d5db;
             border-radius: 0.5rem;
             margin-top: 0.5rem;
+            color: #3D4127; /* Feste Farbe für Lesbarkeit */
+        }
+        #theme-switcher-dropdown {
+            top: 4rem;
+            left: 1rem;
+        }
+        .theme-button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        /* Styles für die Themenschaltflächen mit !important */
+        #theme-chili { background-color: #CD1C18 !important; color: white; }
+        #theme-lush { background-color: #2E6F40 !important; color: white; }
+        #theme-stormy { background-color: #6A89A7 !important; color: white; }
+        #theme-mossy { background-color: #647257 !important; color: white; }
+        
+        /* Neuer Stil für den runden Einstellungsbutton */
+        #settings-btn {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+<body class="bg-theme-bg flex items-center justify-center min-h-screen p-4">
+
+    <!-- Einstellungsrad in der oberen linken Ecke -->
+    <div class="absolute top-4 left-4 z-50">
+        <button id="settings-btn" class="p-2 text-white bg-theme-accent rounded-full shadow-lg hover:rotate-45 transition-transform duration-300">
+            <span class="material-icons">settings</span>
+        </button>
+        <!-- Dropdown-Menü für die Themenauswahl -->
+        <div id="theme-switcher-dropdown" class="absolute hidden bg-white rounded-lg shadow-xl p-4 mt-2 w-40">
+            <h3 class="text-sm font-bold text-gray-700 mb-2">Thema wählen</h3>
+            <div class="space-y-2">
+                <button id="theme-chili" class="theme-button w-full text-left">Chili Spice</button>
+                <button id="theme-lush" class="theme-button w-full text-left">Lush Forest</button>
+                <button id="theme-stormy" class="theme-button w-full text-left">Stormy Morning</button>
+                <button id="theme-mossy" class="theme-button w-full text-left">Mossy Meadow</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Hauptcontainer für die Anwendung -->
-    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full transform transition-all hover:scale-105 duration-300">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">🛫 Flugstart-Rechner</h1>
-        <p class="text-center text-gray-600 mb-8">
+    <div class="bg-theme-container p-8 rounded-2xl shadow-xl max-w-lg w-full transform transition-all duration-300">
+        <h1 class="text-3xl font-bold text-center text-theme-title mb-6 flex items-center justify-center space-x-2">
+            <span class="material-icons">flight_takeoff</span>
+            <span>Flugstart-Rechner</span>
+        </h1>
+        <p class="text-center text-theme-text mb-8">
             Simulieren Sie die wichtigsten Startgeschwindigkeiten (V1, VR, V2) und die Abhebzeit.
             Die Berechnungen basieren auf vereinfachten Formeln.
         </p>
         
         <!-- Lade-Indikator während die Daten geladen werden -->
-        <div id="loading-indicator" class="text-center py-4 text-gray-500 hidden">
+        <div id="loading-indicator" class="text-center py-4 text-theme-text hidden">
             <div class="flex items-center justify-center space-x-2">
-                <div class="animate-spin h-5 w-5 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+                <div class="animate-spin h-5 w-5 border-4 border-theme-accent border-t-transparent rounded-full"></div>
                 <span>Lade Flughafendaten...</span>
             </div>
         </div>
@@ -45,32 +144,44 @@
             
             <!-- Eingabefeld für die Flugzeugsuche mit KI -->
             <div>
-                <label for="aircraft_name_input" class="block text-sm font-medium text-gray-700">Flugzeugtyp suchen</label>
+                <label for="aircraft_name_input" class="block text-sm font-medium text-theme-text">Flugzeugtyp suchen</label>
                 <div class="mt-1 flex items-center space-x-2">
-                    <input type="text" id="aircraft_name_input" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" placeholder="z.B. Airbus A320">
-                    <button type="button" id="search_aircraft_btn" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 transition-colors">
+                    <input type="text" id="aircraft_name_input" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-theme-accent focus-theme-accent sm:text-sm p-3 bg-white text-gray-800" placeholder="z.B. Airbus A320">
+                    <button type="button" id="search_aircraft_btn" class="px-4 py-2 bg-theme-accent text-white font-medium rounded-md shadow-sm hover-bg-theme-accent transition-colors">
                         Suchen
                     </button>
                 </div>
             </div>
 
             <!-- Anzeige der von der KI gefundenen Daten -->
-            <div id="ai_info_display" class="bg-gray-50 p-3 rounded-lg shadow-sm hidden">
+            <div id="ai_info_display" class="bg-theme-info p-3 rounded-lg shadow-sm hidden">
                 <div class="flex justify-between items-center mb-1">
-                    <span class="text-sm font-medium text-gray-700">Flugzeugtyp:</span>
-                    <span id="ai_model" class="text-gray-900 font-bold"></span>
+                    <span class="text-sm font-medium text-theme-text">Flugzeugtyp:</span>
+                    <span id="ai_model" class="text-theme-title font-bold"></span>
+                </div>
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-medium text-theme-text">Maximales Startgewicht (MTOW):</span>
+                    <span id="ai_mtow" class="text-theme-title font-bold"></span>
+                </div>
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-medium text-theme-text">Triebwerksleistung (Schub):</span>
+                    <span id="ai_engine_power" class="text-theme-title font-bold"></span>
+                </div>
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-medium text-theme-text">Kraftstoffverbrauch (Fahrwerk ausgefahren):</span>
+                    <span id="ai_fuel_with_gear" class="text-theme-title font-bold"></span>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="text-sm font-medium text-gray-700">Maximales Startgewicht (MTOW):</span>
-                    <span id="ai_mtow" class="text-green-600 font-bold"></span>
+                    <span class="text-sm font-medium text-theme-text">Kraftstoffverbrauch (Fahrwerk eingefahren):</span>
+                    <span id="ai_fuel_without_gear" class="text-theme-title font-bold"></span>
                 </div>
             </div>
 
             <!-- Eingabefeld für das Flugzeuggewicht -->
             <div>
-                <label for="aircraft_weight" class="block text-sm font-medium text-gray-700">Flugzeuggewicht (in kg)</label>
+                <label for="aircraft_weight" class="block text-sm font-medium text-theme-text">Flugzeuggewicht (in kg)</label>
                 <div class="mt-1 relative rounded-md shadow-sm">
-                    <input type="number" id="aircraft_weight" name="aircraft_weight" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" placeholder="z.B. 75000">
+                    <input type="number" id="aircraft_weight" name="aircraft_weight" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-theme-accent focus-theme-accent sm:text-sm p-3 bg-white text-gray-800" placeholder="z.B. 75000">
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                         <span class="text-gray-500 sm:text-sm">
                             kg
@@ -81,9 +192,9 @@
 
             <!-- Eingabefeld für die Flughafensuche -->
             <div>
-                <label for="airport_search" class="block text-sm font-medium text-gray-700">Flughafen suchen</label>
+                <label for="airport_search" class="block text-sm font-medium text-theme-text">Flughafen suchen</label>
                 <div class="mt-1 relative">
-                    <input type="text" id="airport_search" name="airport_search" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" placeholder="z.B. Frankfurt oder Berlin">
+                    <input type="text" id="airport_search" name="airport_search" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-theme-accent focus-theme-accent sm:text-sm p-3 bg-white text-gray-800" placeholder="z.B. Frankfurt oder Berlin">
                     <!-- Container für die Suchergebnisse -->
                     <div id="airport-results" class="absolute z-10 w-full bg-white shadow-lg rounded-md mt-1 border border-gray-200 hidden search-results"></div>
                 </div>
@@ -91,9 +202,9 @@
 
             <!-- Eingabefeld für die Startbahnlänge -->
             <div>
-                <label for="runway_length" class="block text-sm font-medium text-gray-700">Startbahnlänge (in m)</label>
+                <label for="runway_length" class="block text-sm font-medium text-theme-text">Startbahnlänge (in m)</label>
                 <div class="mt-1 relative rounded-md shadow-sm">
-                    <input type="number" id="runway_length" name="runway_length" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" placeholder="z.B. 3000" readonly>
+                    <input type="number" id="runway_length" name="runway_length" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-theme-accent focus-theme-accent sm:text-sm p-3 bg-white text-gray-800" placeholder="z.B. 3000" readonly>
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                         <span class="text-gray-500 sm:text-sm">
                             m
@@ -104,23 +215,20 @@
             
             <!-- Anzeige der automatisch geladenen Temperatur -->
             <div>
-                <label class="block text-sm font-medium text-gray-700">Außentemperatur</label>
-                <div class="mt-1 flex items-center justify-between bg-gray-50 p-3 rounded-lg shadow-sm">
-                    <span id="temp-display" class="font-bold text-gray-700">Wählen Sie einen Flughafen...</span>
-                    <span id="temp-loading-spinner" class="animate-spin h-5 w-5 text-indigo-500 hidden">
-                        <svg class="h-full w-full" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
+                <label class="block text-sm font-medium text-theme-text">Außentemperatur</label>
+                <div class="mt-1 flex items-center justify-between bg-theme-info p-3 rounded-lg shadow-sm">
+                    <span id="temp-display" class="font-bold text-theme-title">Wählen Sie einen Flughafen...</span>
+                    <span id="temp-loading-spinner" class="animate-spin h-5 w-5 text-theme-title hidden">
+                        <span class="material-icons">sync</span>
                     </span>
                 </div>
             </div>
 
             <!-- Eingabefeld für die Höhe -->
             <div>
-                <label for="altitude" class="block text-sm font-medium text-gray-700">Höhe (in m)</label>
+                <label for="altitude" class="block text-sm font-medium text-theme-text">Höhe (in m)</label>
                 <div class="mt-1 relative rounded-md shadow-sm">
-                    <input type="number" id="altitude" name="altitude" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" placeholder="z.B. 500" readonly>
+                    <input type="number" id="altitude" name="altitude" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-theme-accent focus-theme-accent sm:text-sm p-3 bg-white text-gray-800" placeholder="z.B. 500" readonly>
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                         <span class="text-gray-500 sm:text-sm">
                             m
@@ -130,36 +238,36 @@
             </div>
             
             <!-- Schaltfläche für die Berechnung -->
-            <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200 ease-in-out">
+            <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-theme-accent hover:bg-theme-title focus:outline-none focus:ring-2 focus:ring-offset-2 focus-theme-accent transition-colors duration-200 ease-in-out">
                 Berechnen
             </button>
         </form>
 
         <!-- Bereich zur Anzeige der Ergebnisse -->
         <div id="results" class="mt-8 pt-6 border-t-2 border-gray-200 space-y-4 hidden">
-            <h2 class="text-2xl font-semibold text-center text-gray-800">Ergebnisse</h2>
+            <h2 class="text-2xl font-semibold text-center text-theme-text">Ergebnisse</h2>
             <div class="space-y-2">
-                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg shadow-sm">
-                    <span class="font-medium text-gray-700">V1 (Entscheidungsgeschwindigkeit):</span>
-                    <span id="v1-result" class="text-indigo-600 font-bold text-xl">-- km/h</span>
+                <div class="flex justify-between items-center bg-theme-info p-3 rounded-lg shadow-sm">
+                    <span class="font-medium text-theme-text">V1 (Entscheidungsgeschwindigkeit):</span>
+                    <span id="v1-result" class="text-theme-title font-bold text-xl">-- km/h</span>
                 </div>
-                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg shadow-sm">
-                    <span class="font-medium text-gray-700">VR (Rotationsgeschwindigkeit):</span>
-                    <span id="vr-result" class="text-indigo-600 font-bold text-xl">-- km/h</span>
+                <div class="flex justify-between items-center bg-theme-info p-3 rounded-lg shadow-sm">
+                    <span class="font-medium text-theme-text">VR (Rotationsgeschwindigkeit):</span>
+                    <span id="vr-result" class="text-theme-title font-bold text-xl">-- km/h</span>
                 </div>
-                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg shadow-sm">
-                    <span class="font-medium text-gray-700">V2 (Sichere Startsteiggeschwindigkeit):</span>
-                    <span id="v2-result" class="text-indigo-600 font-bold text-xl">-- km/h</span>
+                <div class="flex justify-between items-center bg-theme-info p-3 rounded-lg shadow-sm">
+                    <span class="font-medium text-theme-text">V2 (Sichere Startsteiggeschwindigkeit):</span>
+                    <span id="v2-result" class="text-theme-title font-bold text-xl">-- km/h</span>
                 </div>
-                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg shadow-sm">
-                    <span class="font-medium text-gray-700">Abhebzeit:</span>
-                    <span id="takeoff-time-result" class="text-indigo-600 font-bold text-xl">-- s</span>
+                <div class="flex justify-between items-center bg-theme-info p-3 rounded-lg shadow-sm">
+                    <span class="font-medium text-theme-text">Abhebzeit:</span>
+                    <span id="takeoff-time-result" class="text-theme-title font-bold text-xl">-- s</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript für die Berechnungslogik -->
+    <!-- JavaScript für die Berechnungs- und Themenlogik -->
     <script>
         const OPENWEATHERMAP_API_KEY = "d5f7c01fccc6586a908135deb9969a61";
 
@@ -181,7 +289,13 @@
         const aiInfoDisplay = document.getElementById('ai_info_display');
         const aiModelSpan = document.getElementById('ai_model');
         const aiMtowSpan = document.getElementById('ai_mtow');
+        const aiEnginePowerSpan = document.getElementById('ai_engine_power');
+        const aiFuelWithGearSpan = document.getElementById('ai_fuel_with_gear');
+        const aiFuelWithoutGearSpan = document.getElementById('ai_fuel_without_gear');
         const aircraftWeightInput = document.getElementById('aircraft_weight');
+        
+        const settingsBtn = document.getElementById('settings-btn');
+        const themeDropdown = document.getElementById('theme-switcher-dropdown');
 
         /**
          * Ruft die CSV-Dateien ab, parst sie und kombiniert die Daten.
@@ -315,7 +429,15 @@
             
             while (retryCount < maxRetries) {
                 try {
-                    const prompt = `Finden Sie das maximale Startgewicht (MTOW) des Flugzeugs "${aircraftName}". Geben Sie die Antwort als JSON-Objekt zurück, das die folgenden Eigenschaften hat: 'model' (STRING) und 'mtow_kg' (NUMBER). Wenn Sie das Gewicht nicht finden können, setzen Sie 'mtow_kg' auf -1. Beispiel für die Ausgabe: {"model": "Airbus A320", "mtow_kg": 78000}`;
+                    // Der aktualisierte Prompt weist die KI an, die Informationen von Wikipedia zu finden.
+                    // Er fragt auch nach neuen Feldern.
+                    const prompt = `Finden Sie auf der Wikipedia-Seite für das Flugzeug "${aircraftName}" die folgenden Informationen und geben Sie sie als JSON-Objekt zurück: 
+                                    - maximales Startgewicht (MTOW) in kg
+                                    - Triebwerksleistung (Schub) in lbs (Pfund)
+                                    - Kraftstoffverbrauch (mit ausgefahrenem Fahrwerk) in Litern pro Stunde
+                                    - Kraftstoffverbrauch (mit eingefahrenem Fahrwerk) in Litern pro Stunde
+                                    Wenn Sie eine Information nicht finden können, setzen Sie den Wert auf -1. Beispiel für die Ausgabe: {"model": "Airbus A320", "mtow_kg": 78000, "engine_power_lbs": 27000, "fuel_consumption_with_gear_l_per_hour": 5000, "fuel_consumption_without_gear_l_per_hour": 3000}`;
+                    
                     const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
                     const payload = {
                         contents: chatHistory,
@@ -325,12 +447,15 @@
                                 type: "OBJECT",
                                 properties: {
                                     "model": { "type": "STRING" },
-                                    "mtow_kg": { "type": "NUMBER" }
+                                    "mtow_kg": { "type": "NUMBER" },
+                                    "engine_power_lbs": { "type": "NUMBER" },
+                                    "fuel_consumption_with_gear_l_per_hour": { "type": "NUMBER" },
+                                    "fuel_consumption_without_gear_l_per_hour": { "type": "NUMBER" }
                                 }
                             }
                         }
                     };
-                    const apiKey = "AIzaSyBH1jxoVg6mkk1H4RGBMxtI_YqCU-u1fZQ";
+                    const apiKey = "";
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
                     const response = await fetch(apiUrl, {
@@ -356,10 +481,17 @@
                         aiMtowSpan.textContent = `${parsedJson.mtow_kg.toLocaleString()} kg`;
                         aircraftWeightInput.value = parsedJson.mtow_kg;
                         maxTakeoffWeight = parsedJson.mtow_kg;
+                        
+                        // Setzen der neuen Datenfelder
+                        aiEnginePowerSpan.textContent = parsedJson.engine_power_lbs !== -1 ? `${parsedJson.engine_power_lbs.toLocaleString()} lbs` : 'Nicht verfügbar';
+                        aiFuelWithGearSpan.textContent = parsedJson.fuel_consumption_with_gear_l_per_hour !== -1 ? `${parsedJson.fuel_consumption_with_gear_l_per_hour.toLocaleString()} L/h` : 'Nicht verfügbar';
+                        aiFuelWithoutGearSpan.textContent = parsedJson.fuel_consumption_without_gear_l_per_hour !== -1 ? `${parsedJson.fuel_consumption_without_gear_l_per_hour.toLocaleString()} L/h` : 'Nicht verfügbar';
+
                         aiInfoDisplay.classList.remove('hidden');
                         displayMessage(`Daten für ${parsedJson.model} gefunden.`);
                     } else {
                         displayMessage('Keine Daten für dieses Flugzeug gefunden.');
+                        aiInfoDisplay.classList.add('hidden');
                     }
                     
                     // Exit the loop on success
@@ -399,7 +531,7 @@
                         const airport = combinedAirportData[key];
                         const resultItem = document.createElement('div');
                         resultItem.textContent = `${airport.name} (${key})`;
-                        resultItem.className = 'p-2 cursor-pointer hover:bg-indigo-100 transition-colors duration-150';
+                        resultItem.className = 'p-2 cursor-pointer bg-white text-gray-800 hover:bg-theme-info transition-colors duration-150';
                         resultItem.dataset.key = key; // Speichere den Schlüssel
                         
                         // Klick-Handler für das Suchergebnis
@@ -522,8 +654,53 @@
             }, 3000);
         }
 
-        // Starte den Ladevorgang, wenn das Dokument geladen ist
-        document.addEventListener('DOMContentLoaded', loadData);
+        // --- Themenwechsel-Logik ---
+        const themes = {
+            'lush': {
+                bg: '#253D2C', container: '#68BA7F', text: '#253D2C', title: '#2E6F40', accent: '#2E6F40', info: '#CFFFDC'
+            },
+            'chili': {
+                bg: '#38000A', container: '#CD1C18', text: '#ffffff', title: '#9B1313', accent: '#9B1313', info: '#FFA896'
+            },
+            'stormy': {
+                bg: '#384959', container: '#6A89A7', text: '#ffffff', title: '#88BBDF', accent: '#88BBDF', info: '#BDDDDF'
+            },
+            'mossy': {
+                bg: '#3C4430', container: '#8C9B7E', text: '#3C4430', title: '#647257', accent: '#647257', info: '#D7E0D0'
+            }
+        };
+
+        function applyTheme(themeName) {
+            document.body.dataset.theme = themeName;
+            localStorage.setItem('selectedTheme', themeName);
+        }
+
+        function toggleThemeDropdown() {
+            themeDropdown.classList.toggle('hidden');
+        }
+
+        // Event-Listener für den Einstellungs-Button
+        settingsBtn.addEventListener('click', toggleThemeDropdown);
+        
+        // Event-Listener für die Themen-Buttons
+        document.getElementById('theme-chili').addEventListener('click', () => applyTheme('chili'));
+        document.getElementById('theme-lush').addEventListener('click', () => applyTheme('lush'));
+        document.getElementById('theme-stormy').addEventListener('click', () => applyTheme('stormy'));
+        document.getElementById('theme-mossy').addEventListener('click', () => applyTheme('mossy'));
+
+        // Schließen des Dropdowns bei Klick außerhalb
+        document.addEventListener('click', function(event) {
+            if (!settingsBtn.contains(event.target) && !themeDropdown.contains(event.target)) {
+                themeDropdown.classList.add('hidden');
+            }
+        });
+
+        // Beim Laden der Seite das gespeicherte Thema anwenden
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('selectedTheme') || 'lush'; // Standardthema ist Lush
+            applyTheme(savedTheme);
+            loadData();
+        });
     </script>
 </body>
 </html>
