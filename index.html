@@ -349,6 +349,17 @@
             const acceleration = 10 - (weight / 100000) * 2; // Vereinfachte Formel
             const takeoffTime = vr_ms / acceleration;
 
+            // Hinzugefügte Logik: Überprüfung, ob die Startbahn ausreicht
+            // Die benötigte Startdistanz wird als halbe Strecke bei konstanter Beschleunigung berechnet
+            const requiredDistance = 0.5 * vr_ms * takeoffTime;
+            
+            if (requiredDistance > runwayLength) {
+                displayMessage('Startbahn nicht ausreichend!');
+                // Hier könnten Sie auch die Anzeige der Ergebnisse ausblenden, falls gewünscht
+                // document.getElementById('results').classList.add('hidden');
+                return;
+            }
+
             // Ergebnisse auf zwei Dezimalstellen runden
             const v1Rounded = v1.toFixed(2);
             const vrRounded = vr.toFixed(2);
@@ -397,4 +408,3 @@
     </script>
 </body>
 </html>
-
