@@ -42,6 +42,30 @@
 
         <!-- Formular für die Eingaben -->
         <form id="calculatorForm" class="space-y-6">
+            
+            <!-- Eingabefeld für die Flugzeugsuche mit KI -->
+            <div>
+                <label for="aircraft_name_input" class="block text-sm font-medium text-gray-700">Flugzeugtyp suchen</label>
+                <div class="mt-1 flex items-center space-x-2">
+                    <input type="text" id="aircraft_name_input" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" placeholder="z.B. Airbus A320">
+                    <button type="button" id="search_aircraft_btn" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 transition-colors">
+                        Suchen
+                    </button>
+                </div>
+            </div>
+
+            <!-- Anzeige der von der KI gefundenen Daten -->
+            <div id="ai_info_display" class="bg-gray-50 p-3 rounded-lg shadow-sm hidden">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-medium text-gray-700">Flugzeugtyp:</span>
+                    <span id="ai_model" class="text-gray-900 font-bold"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">Maximales Startgewicht (MTOW):</span>
+                    <span id="ai_mtow" class="text-green-600 font-bold"></span>
+                </div>
+            </div>
+
             <!-- Eingabefeld für das Flugzeuggewicht -->
             <div>
                 <label for="aircraft_weight" class="block text-sm font-medium text-gray-700">Flugzeuggewicht (in kg)</label>
@@ -137,13 +161,11 @@
 
     <!-- JavaScript für die Berechnungslogik -->
     <script>
-        // API-Schlüssel für OpenWeatherMap
         const OPENWEATHERMAP_API_KEY = "d5f7c01fccc6586a908135deb9969a61";
-        // API-Schlüssel für openaip.net (nicht verwendet, da Daten aus CSV-Dateien stammen)
-        const OPENAIP_API_KEY = "87ce3189b3d00f8dcd45e41352fc5efe";
 
-        let currentTemp = null; // Speichert die zuletzt geladene Temperatur
-        let combinedAirportData = {}; // Speichert die kombinierten Daten aus den CSVs
+        let currentTemp = null; 
+        let combinedAirportData = {};
+        let maxTakeoffWeight = null; // Speichert das von der KI gefundene MTOW
 
         const airportSearchInput = document.getElementById('airport_search');
         const airportResultsDiv = document.getElementById('airport-results');
@@ -154,10 +176,17 @@
         const loadingIndicator = document.getElementById('loading-indicator');
         const form = document.getElementById('calculatorForm');
 
+        const aircraftNameInput = document.getElementById('aircraft_name_input');
+        const searchAircraftBtn = document.getElementById('search_aircraft_btn');
+        const aiInfoDisplay = document.getElementById('ai_info_display');
+        const aiModelSpan = document.getElementById('ai_model');
+        const aiMtowSpan = document.getElementById('ai_mtow');
+        const aircraftWeightInput = document.getElementById('aircraft_weight');
+
         /**
          * Ruft die CSV-Dateien ab, parst sie und kombiniert die Daten.
          */
-        async function loadAirportData() {
+        async function loadData() {
             loadingIndicator.classList.remove('hidden');
             form.classList.add('hidden');
             
@@ -171,8 +200,8 @@
                 const runwaysResponse = await fetch('runways.csv');
                 const runwaysText = await runwaysResponse.text();
                 const runways = parseCSV(runwaysText);
-
-                // Kombinieren der Daten
+                
+                // Kombinieren der Flughafendaten
                 const runwaysMap = new Map();
                 runways.forEach(r => {
                     const length_ft = parseFloat(r.length_ft);
@@ -207,7 +236,7 @@
                 
                 loadingIndicator.classList.add('hidden');
                 form.classList.remove('hidden');
-                console.log('Flughafendaten erfolgreich geladen und verarbeitet.', combinedAirportData);
+                console.log('Alle Daten erfolgreich geladen und verarbeitet.');
 
             } catch (error) {
                 console.error('Fehler beim Laden der CSV-Daten:', error);
@@ -263,6 +292,97 @@
             }
         }
 
+        /**
+         * Sucht mit der KI nach Flugzeugdaten und dem maximalen Startgewicht.
+         * @param {string} aircraftName - Der Name des zu suchenden Flugzeugs.
+         */
+        async function searchAircraftWithAI(aircraftName) {
+            if (!aircraftName) {
+                displayMessage('Bitte geben Sie einen Flugzeugnamen ein.');
+                return;
+            }
+
+            // UI-Feedback für den Ladevorgang
+            searchAircraftBtn.disabled = true;
+            searchAircraftBtn.textContent = 'Suchen...';
+            aiInfoDisplay.classList.add('hidden');
+            aircraftWeightInput.value = '';
+            maxTakeoffWeight = null;
+
+            let retryCount = 0;
+            const maxRetries = 3;
+            let delay = 1000; // 1 second delay
+            
+            while (retryCount < maxRetries) {
+                try {
+                    const prompt = `Finden Sie das maximale Startgewicht (MTOW) des Flugzeugs "${aircraftName}". Geben Sie die Antwort als JSON-Objekt zurück, das die folgenden Eigenschaften hat: 'model' (STRING) und 'mtow_kg' (NUMBER). Wenn Sie das Gewicht nicht finden können, setzen Sie 'mtow_kg' auf -1. Beispiel für die Ausgabe: {"model": "Airbus A320", "mtow_kg": 78000}`;
+                    const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                    const payload = {
+                        contents: chatHistory,
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                type: "OBJECT",
+                                properties: {
+                                    "model": { "type": "STRING" },
+                                    "mtow_kg": { "type": "NUMBER" }
+                                }
+                            }
+                        }
+                    };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                         if (response.status === 429) {
+                            // Too Many Requests, try again with exponential backoff
+                            throw new Error('API limit reached. Retrying...');
+                        }
+                        throw new Error(`API-Fehler: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    const json = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    const parsedJson = JSON.parse(json);
+
+                    if (parsedJson && parsedJson.mtow_kg && parsedJson.mtow_kg !== -1) {
+                        aiModelSpan.textContent = parsedJson.model;
+                        aiMtowSpan.textContent = `${parsedJson.mtow_kg.toLocaleString()} kg`;
+                        aircraftWeightInput.value = parsedJson.mtow_kg;
+                        maxTakeoffWeight = parsedJson.mtow_kg;
+                        aiInfoDisplay.classList.remove('hidden');
+                        displayMessage(`Daten für ${parsedJson.model} gefunden.`);
+                    } else {
+                        displayMessage('Keine Daten für dieses Flugzeug gefunden.');
+                    }
+                    
+                    // Exit the loop on success
+                    break; 
+
+                } catch (error) {
+                    console.error('Fehler bei der KI-Suche:', error);
+                    retryCount++;
+                    if (retryCount >= maxRetries) {
+                        displayMessage('Fehler bei der KI-Suche. Bitte versuchen Sie es manuell oder später erneut.');
+                    } else {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2; // Exponential backoff
+                    }
+                }
+            }
+            
+            // UI-Feedback zurücksetzen
+            searchAircraftBtn.disabled = false;
+            searchAircraftBtn.textContent = 'Suchen';
+        }
+
+
         // Event-Listener für die Flughafensuche
         airportSearchInput.addEventListener('input', function() {
             const query = this.value.toLowerCase();
@@ -308,6 +428,12 @@
                 airportResultsDiv.classList.add('hidden');
             }
         });
+        
+        // Event-Listener für den neuen KI-Such-Button
+        searchAircraftBtn.addEventListener('click', () => {
+            const aircraftName = aircraftNameInput.value;
+            searchAircraftWithAI(aircraftName);
+        });
 
         // Event-Listener für das Berechnungsformular
         document.getElementById('calculatorForm').addEventListener('submit', function(event) {
@@ -323,6 +449,12 @@
                 const errorMessage = 'Bitte geben Sie gültige Werte in alle Felder ein und wählen Sie einen Flughafen, um die Temperatur zu laden.';
                 displayMessage(errorMessage);
                 return;
+            }
+
+            // Zusätzliche Logik: Überprüfung, ob das eingegebene Gewicht das MTOW überschreitet
+            if (maxTakeoffWeight && weight > maxTakeoffWeight) {
+                displayMessage(`Achtung: Das eingegebene Gewicht (${weight} kg) ist größer als das maximale Startgewicht (${maxTakeoffWeight} kg)!`);
+                return; 
             }
 
             // --- Vereinfachte Berechnungslogik (NICHT für den realen Einsatz!) ---
@@ -355,8 +487,6 @@
             
             if (requiredDistance > runwayLength) {
                 displayMessage('Startbahn nicht ausreichend!');
-                // Hier könnten Sie auch die Anzeige der Ergebnisse ausblenden, falls gewünscht
-                // document.getElementById('results').classList.add('hidden');
                 return;
             }
 
@@ -376,17 +506,6 @@
             document.getElementById('results').classList.remove('hidden');
         });
         
-        // Fügt eine Animation zum Formular hinzu, wenn der Fokus darauf liegt
-        const formInputs = document.querySelectorAll('#calculatorForm input');
-        formInputs.forEach(input => {
-            input.addEventListener('focus', () => {
-                input.parentNode.parentNode.classList.add('ring-2', 'ring-indigo-500', 'ring-offset-2');
-            });
-            input.addEventListener('blur', () => {
-                input.parentNode.parentNode.classList.remove('ring-2', 'ring-indigo-500', 'ring-offset-2');
-            });
-        });
-        
         // Funktion zur Anzeige von Nachrichten (ersetzt alert())
         function displayMessage(message) {
             let messageBox = document.getElementById('message-box');
@@ -404,7 +523,7 @@
         }
 
         // Starte den Ladevorgang, wenn das Dokument geladen ist
-        document.addEventListener('DOMContentLoaded', loadAirportData);
+        document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
 </html>
