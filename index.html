@@ -239,6 +239,19 @@
                 </div>
             </div>
             
+            <!-- Hinzugefügtes Eingabefeld für die Flughöhe -->
+            <div>
+                <label for="altitude" class="block text-sm font-medium text-theme-text">Flughöhe (in m)</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <input type="number" id="altitude" name="altitude" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-theme-accent focus-theme-accent sm:text-sm p-3 bg-white text-gray-800" placeholder="wird automatisch geladen" readonly>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span class="text-gray-500 sm:text-sm">
+                            m
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Anzeige der automatisch geladenen Wetterdaten -->
             <div>
                 <label class="block text-sm font-medium text-theme-text">Wetterbedingungen</label>
@@ -321,7 +334,8 @@
         const airportSearchInput = document.getElementById('airport_search');
         const airportResultsDiv = document.getElementById('airport-results');
         const runwayInput = document.getElementById('runway_length');
-        const altitudeInput = document.getElementById('altitude');
+        // Korrigierte Deklaration: Das Element mit der ID "altitude" existiert jetzt im HTML
+        const altitudeInput = document.getElementById('altitude'); 
         const weatherDisplay = document.getElementById('weather-display');
         const weatherLoadingSpinner = document.getElementById('weather-loading-spinner');
         const loadingIndicator = document.getElementById('loading-indicator');
@@ -504,7 +518,7 @@
                             }
                         }
                     };
-                    const apiKey = "AIzaSyBH1jxoVg6mkk1H4RGBMxtI_YqCU-u1fZQ";
+                    const apiKey = "";
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
                     const response = await fetch(apiUrl, {
@@ -620,7 +634,8 @@
                         
                         resultItem.addEventListener('click', () => {
                             runwayInput.value = airport.runway_length;
-                            altitudeInput.value = airport.altitude;
+                            // Dies ist der korrigierte Teil: Das Element für "altitude" existiert jetzt
+                            altitudeInput.value = airport.altitude; 
                             airportSearchInput.value = `${airport.name} (${key})`; 
                             airportResultsDiv.classList.add('hidden'); 
                             
@@ -789,4 +804,3 @@
     </script>
 </body>
 </html>
-
