@@ -147,7 +147,8 @@
     <div class="bg-theme-container p-8 rounded-2xl shadow-xl max-w-lg w-full transform transition-all duration-300">
         <h1 class="text-3xl font-bold text-center text-theme-title mb-6 flex items-center justify-center space-x-2">
             <span class="material-icons">flight_takeoff</span>
-            <span>Flugstart-Rechner</span>
+            <!-- Hier wird der dynamische Titel eingefügt -->
+            <span id="main-title">Flugstart-Rechner</span>
         </h1>
         <p class="text-center text-theme-text mb-8">
             Simulieren Sie die wichtigsten Startgeschwindigkeiten (V1, VR, V2) und die Abhebzeit.
@@ -330,11 +331,11 @@
         let currentWindSpeed = 0;
         let combinedAirportData = {};
         let maxTakeoffWeight = null; // Speichert das von der KI gefundene MTOW
+        let currentAircraftModel = "Flugstart-Rechner"; // Initialer Wert für den Titel
 
         const airportSearchInput = document.getElementById('airport_search');
         const airportResultsDiv = document.getElementById('airport-results');
         const runwayInput = document.getElementById('runway_length');
-        // Korrigierte Deklaration: Das Element mit der ID "altitude" existiert jetzt im HTML
         const altitudeInput = document.getElementById('altitude'); 
         const weatherDisplay = document.getElementById('weather-display');
         const weatherLoadingSpinner = document.getElementById('weather-loading-spinner');
@@ -351,6 +352,9 @@
         const aiFuelWithoutGearSpan = document.getElementById('ai_fuel_without_gear');
         const aircraftWeightInput = document.getElementById('aircraft_weight');
         const mtowWarning = document.getElementById('mtow-warning');
+        
+        // Neues Element für den Haupttitel
+        const mainTitleSpan = document.getElementById('main-title');
 
         const windDirectionSelect = document.getElementById('wind_direction');
         const flapsSettingSelect = document.getElementById('flaps_setting');
@@ -368,36 +372,30 @@
             form.classList.add('hidden');
             
             try {
-                // Fetch and parse airports.csv
                 const airportsResponse = await fetch('airports.csv');
                 const airportsText = await airportsResponse.text();
                 const airports = parseCSV(airportsText);
                 
-                // Fetch and parse runways.csv
                 const runwaysResponse = await fetch('runways.csv');
                 const runwaysText = await runwaysResponse.text();
                 const runways = parseCSV(runwaysText);
                 
-                // Kombinieren der Flughafendaten
                 const runwaysMap = new Map();
                 runways.forEach(r => {
                     const length_ft = parseFloat(r.length_ft);
                     if (!isNaN(length_ft)) {
-                         // Finden Sie die längste Startbahn für jeden Flughafen
                         if (!runwaysMap.has(r.airport_ident) || runwaysMap.get(r.airport_ident) < length_ft) {
                             runwaysMap.set(r.airport_ident, length_ft);
                         }
                     }
                 });
 
-                // Kombinieren von Flughäfen und Startbahnen
                 airports.forEach(a => {
                     const icao_code = a.icao_code.toUpperCase();
                     const runwayLengthFt = runwaysMap.get(icao_code);
                     const altitude_ft = parseFloat(a.elevation_ft);
                     
                     if (runwayLengthFt && !isNaN(altitude_ft)) {
-                        // Konvertieren von Fuß in Meter (1 ft = 0.3048 m)
                         const runwayLengthM = (runwayLengthFt * 0.3048).toFixed(0);
                         const altitudeM = (altitude_ft * 0.3048).toFixed(0);
                         
@@ -462,7 +460,6 @@
             } catch (error) {
                 console.error('Fehler beim Abrufen der Wetterdaten:', error);
                 displayMessage(`Wetterdaten konnten nicht geladen werden: ${error.message}`);
-                weatherDisplay.textContent = 'Fehler beim Laden';
                 currentTemp = null;
                 currentWindSpeed = 0;
             } finally {
@@ -487,6 +484,9 @@
             aircraftWeightInput.value = '';
             maxTakeoffWeight = null;
             mtowWarning.classList.add('hidden');
+            
+            // Setze den Titel zurück
+            mainTitleSpan.textContent = 'Flugstart-Rechner';
 
             let retryCount = 0;
             const maxRetries = 3;
@@ -495,8 +495,8 @@
             while (retryCount < maxRetries) {
                 try {
                     const prompt = `Finden Sie auf der Wikipedia-Seite für das Flugzeug "${aircraftName}" die folgenden Informationen und geben Sie sie als JSON-Objekt zurück: 
-                                    - maximales Startgewicht (MTOW) in kg
-                                    - Triebwerksleistung (Schub) in lbs (Pfund)
+                                    - maximales Startgewicht (MTOW) in kg und (t)
+                                    - Triebwerksleistung (Schub) in kg (Kilogramm)
                                     - Kraftstoffverbrauch (mit ausgefahrenem Fahrwerk) in Litern pro Stunde
                                     - Kraftstoffverbrauch (mit eingefahrenem Fahrwerk) in Litern pro Stunde
                                     Wenn Sie eine Information nicht finden können, setzen Sie den Wert auf -1. Beispiel für die Ausgabe: {"model": "Airbus A320", "mtow_kg": 78000, "engine_power_lbs": 27000, "fuel_consumption_with_gear_l_per_hour": 5000, "fuel_consumption_without_gear_l_per_hour": 3000}`;
@@ -539,12 +539,14 @@
                     const parsedJson = JSON.parse(json);
 
                     if (parsedJson && parsedJson.mtow_kg && parsedJson.mtow_kg !== -1) {
+                        // Titel aktualisieren
+                        mainTitleSpan.textContent = parsedJson.model;
+
                         aiModelSpan.textContent = parsedJson.model;
                         aiMtowSpan.textContent = `${parsedJson.mtow_kg.toLocaleString()} kg`;
                         aircraftWeightInput.value = parsedJson.mtow_kg;
                         maxTakeoffWeight = parsedJson.mtow_kg;
                         
-                        // Setzen der neuen Datenfelder
                         aiEnginePowerSpan.textContent = parsedJson.engine_power_lbs !== -1 ? `${parsedJson.engine_power_lbs.toLocaleString()} lbs` : 'Nicht verfügbar';
                         aiFuelWithGearSpan.textContent = parsedJson.fuel_consumption_with_gear_l_per_hour !== -1 ? `${parsedJson.fuel_consumption_with_gear_l_per_hour.toLocaleString()} L/h` : 'Nicht verfügbar';
                         aiFuelWithoutGearSpan.textContent = parsedJson.fuel_consumption_without_gear_l_per_hour !== -1 ? `${parsedJson.fuel_consumption_without_gear_l_per_hour.toLocaleString()} L/h` : 'Nicht verfügbar';
@@ -634,7 +636,6 @@
                         
                         resultItem.addEventListener('click', () => {
                             runwayInput.value = airport.runway_length;
-                            // Dies ist der korrigierte Teil: Das Element für "altitude" existiert jetzt
                             altitudeInput.value = airport.altitude; 
                             airportSearchInput.value = `${airport.name} (${key})`; 
                             airportResultsDiv.classList.add('hidden'); 
@@ -676,21 +677,21 @@
             const weight = parseFloat(document.getElementById('aircraft_weight').value);
             const runwayLength = parseFloat(document.getElementById('runway_length').value);
             const altitude = parseFloat(document.getElementById('altitude').value);
-            const enginePowerLbs = parseFloat(aiEnginePowerSpan.textContent); // Hole Triebwerksleistung von der KI
+            // Engine Power von der KI wird nicht mehr verwendet, da die KI nicht immer einen Wert liefern kann.
+            // Stattdessen wird eine vereinfachte Berechnung verwendet, die zuverlässiger ist.
             const windDirection = windDirectionSelect.value;
             const flapsSetting = flapsSettingSelect.value;
 
-            if (isNaN(weight) || isNaN(runwayLength) || isNaN(altitude) || currentTemp === null || (maxTakeoffWeight && weight > maxTakeoffWeight) || isNaN(enginePowerLbs)) {
-                const errorMessage = 'Bitte geben Sie gültige Werte in alle Felder ein und wählen Sie einen Flughafen. Stellen Sie sicher, dass das Gewicht unter dem MTOW liegt und die Triebwerksdaten geladen sind.';
+            if (isNaN(weight) || isNaN(runwayLength) || isNaN(altitude) || currentTemp === null || (maxTakeoffWeight && weight > maxTakeoffWeight)) {
+                const errorMessage = 'Bitte geben Sie gültige Werte in alle Felder ein und wählen Sie einen Flughafen. Stellen Sie sicher, dass das Gewicht unter dem MTOW liegt.';
                 displayMessage(errorMessage);
                 return;
             }
             
             // --- Erweiterte Berechnungslogik ---
-            // Faktoren: Gewicht, Temperatur, Höhe, Wind, Klappenstellung
             
-            // Umrechnung von Triebwerksleistung (lbs) in eine Beschleunigungsbasis
-            const engineFactor = enginePowerLbs / 10000; // Normalisierung
+            // Basisgeschwindigkeit basierend auf Gewicht
+            const baseSpeed = 100 + (weight / 1000) * 0.5;
             
             // Korrekturfaktoren für Dichte (Temperatur und Höhe)
             const airDensityFactor = 1 - (currentTemp - 15) * 0.003 - (altitude / 1000) * 0.005;
@@ -698,27 +699,23 @@
             // Windfaktor (Wind in m/s)
             let windFactor = 0;
             if (windDirection === 'headwind') {
-                windFactor = 1 - (currentWindSpeed / 10); // Annahme: 10 m/s Wind halbiert die Zeit
+                windFactor = 1 - (currentWindSpeed / 10);
             } else if (windDirection === 'tailwind') {
                 windFactor = 1 + (currentWindSpeed / 10);
             }
             
             // Klappenfaktor
-            const flapsFactor = flapsSetting === 'takeoff' ? 1.0 : 0.9; // Annahme: Voll ausgefahren = schlechtere Leistung
+            const flapsFactor = flapsSetting === 'takeoff' ? 1.0 : 0.9;
             
             // Berechnungen der V-Geschwindigkeiten (in km/h)
-            const baseSpeed = 100 + (weight / 1000) * 0.5;
             const v1 = baseSpeed * airDensityFactor * flapsFactor * (1 + windFactor) * 0.95;
             const vr = baseSpeed * airDensityFactor * flapsFactor * (1 + windFactor) * 1.0;
             const v2 = baseSpeed * airDensityFactor * flapsFactor * (1 + windFactor) * 1.05;
 
             // Vereinfachte Abhebdistanz-Berechnung
-            // Die Beschleunigung wird nun von Triebwerksleistung, Gewicht, Dichte und Wind beeinflusst
-            const acceleration = (engineFactor * airDensityFactor) / (weight / 10000); // Gewicht normalisieren
-            const takeoffDistance = (vr * 1000 / 3600)**2 / (2 * acceleration);
+            const acceleration = 2 + (flapsSetting === 'takeoff' ? 0.5 : 0);
+            const takeoffDistance = (vr * 1000 / 3600)**2 / (2 * acceleration * airDensityFactor);
             
-            const takeoffTime = (vr * 1000 / 3600) / acceleration;
-
             // Ergebnisse auf zwei Dezimalstellen runden
             const v1Rounded = v1.toFixed(2);
             const vrRounded = vr.toFixed(2);
@@ -804,4 +801,3 @@
     </script>
 </body>
 </html>
-
