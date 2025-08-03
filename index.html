@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flugstart-Rechner</title>
+    <title>Flugstart-Rechner (Erweitert)</title>
     <!-- Tailwind CSS CDN für das Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts Icons -->
@@ -17,24 +17,30 @@
             --color-title: #2E6F40;
             --color-accent: #2E6F40;
             --color-info-bg: #CFFFDC;
+            --color-progress-good: #16A34A; /* Grün */
+            --color-progress-warning: #F59E0B; /* Orange */
         }
         /* Die Textfarbe wurde für eine bessere Lesbarkeit auf Weiß geändert */
         body[data-theme="chili"] {
             --color-bg: #38000A;
             --color-container-bg: #CD1C18;
-            --color-text: #ffffff; /* Geändert */
+            --color-text: #ffffff;
             --color-title: #9B1313;
             --color-accent: #9B1313;
             --color-info-bg: #FFA896;
+            --color-progress-good: #8B5CF6; /* Lila */
+            --color-progress-warning: #FCD34D; /* Gelb */
         }
         /* Die Textfarbe wurde für eine bessere Lesbarkeit auf Weiß geändert */
         body[data-theme="stormy"] {
             --color-bg: #384959;
             --color-container-bg: #6A89A7;
-            --color-text: #ffffff; /* Geändert */
+            --color-text: #ffffff;
             --color-title: #88BBDF;
             --color-accent: #88BBDF;
             --color-info-bg: #BDDDDF;
+            --color-progress-good: #3B82F6; /* Blau */
+            --color-progress-warning: #F97316; /* Orange */
         }
         body[data-theme="mossy"] {
             --color-bg: #3C4430;
@@ -43,6 +49,8 @@
             --color-title: #647257;
             --color-accent: #647257;
             --color-info-bg: #D7E0D0;
+            --color-progress-good: #22C55E; /* Grün */
+            --color-progress-warning: #EF4444; /* Rot */
         }
 
         /* Dynamische Tailwind-Klassen basierend auf den CSS-Variablen */
@@ -98,6 +106,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        /* Style für die visuelle Startbahnleiste */
+        #runway-visual {
+            width: 100%;
+            height: 2rem;
+            background-color: #e5e7eb;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        #required-distance {
+            height: 100%;
+            transition: width 0.5s ease-in-out;
+            border-radius: 0.5rem 0 0 0.5rem;
         }
     </style>
 </head>
@@ -177,7 +200,7 @@
                 </div>
             </div>
 
-            <!-- Eingabefeld für das Flugzeuggewicht -->
+            <!-- Eingabefeld für das Flugzeuggewicht mit Validierung -->
             <div>
                 <label for="aircraft_weight" class="block text-sm font-medium text-theme-text">Flugzeuggewicht (in kg)</label>
                 <div class="mt-1 relative rounded-md shadow-sm">
@@ -188,6 +211,9 @@
                         </span>
                     </div>
                 </div>
+                <p id="mtow-warning" class="text-red-500 text-xs mt-1 hidden">
+                    ⚠ Das Gewicht überschreitet das maximale Startgewicht (MTOW).
+                </p>
             </div>
 
             <!-- Eingabefeld für die Flughafensuche -->
@@ -213,27 +239,33 @@
                 </div>
             </div>
             
-            <!-- Anzeige der automatisch geladenen Temperatur -->
+            <!-- Anzeige der automatisch geladenen Wetterdaten -->
             <div>
-                <label class="block text-sm font-medium text-theme-text">Außentemperatur</label>
+                <label class="block text-sm font-medium text-theme-text">Wetterbedingungen</label>
                 <div class="mt-1 flex items-center justify-between bg-theme-info p-3 rounded-lg shadow-sm">
-                    <span id="temp-display" class="font-bold text-theme-title">Wählen Sie einen Flughafen...</span>
-                    <span id="temp-loading-spinner" class="animate-spin h-5 w-5 text-theme-title hidden">
+                    <span id="weather-display" class="font-bold text-theme-title">Wählen Sie einen Flughafen...</span>
+                    <span id="weather-loading-spinner" class="animate-spin h-5 w-5 text-theme-title hidden">
                         <span class="material-icons">sync</span>
                     </span>
                 </div>
             </div>
 
-            <!-- Eingabefeld für die Höhe -->
-            <div>
-                <label for="altitude" class="block text-sm font-medium text-theme-text">Höhe (in m)</label>
-                <div class="mt-1 relative rounded-md shadow-sm">
-                    <input type="number" id="altitude" name="altitude" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-theme-accent focus-theme-accent sm:text-sm p-3 bg-white text-gray-800" placeholder="z.B. 500" readonly>
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <span class="text-gray-500 sm:text-sm">
-                            m
-                        </span>
-                    </div>
+            <!-- Eingabefelder für Wind und Klappen -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="wind_direction" class="block text-sm font-medium text-theme-text">Windrichtung</label>
+                    <select id="wind_direction" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-theme-accent focus-theme-accent sm:text-sm p-3 bg-white text-gray-800">
+                        <option value="headwind">Gegenwind</option>
+                        <option value="tailwind">Rückenwind</option>
+                        <option value="none" selected>Kein Wind</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="flaps_setting" class="block text-sm font-medium text-theme-text">Klappenstellung</label>
+                    <select id="flaps_setting" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-theme-accent focus-theme-accent sm:text-sm p-3 bg-white text-gray-800">
+                        <option value="takeoff" selected>Startstellung (T/O)</option>
+                        <option value="full">Voll ausgefahren (Full)</option>
+                    </select>
                 </div>
             </div>
             
@@ -260,8 +292,18 @@
                     <span id="v2-result" class="text-theme-title font-bold text-xl">-- km/h</span>
                 </div>
                 <div class="flex justify-between items-center bg-theme-info p-3 rounded-lg shadow-sm">
-                    <span class="font-medium text-theme-text">Abhebzeit:</span>
-                    <span id="takeoff-time-result" class="text-theme-title font-bold text-xl">-- s</span>
+                    <span class="font-medium text-theme-text">Benötigte Startstrecke:</span>
+                    <span id="takeoff-distance-result" class="text-theme-title font-bold text-xl">-- m</span>
+                </div>
+            </div>
+
+            <!-- Visuelle Darstellung der Startstrecke -->
+            <div class="mt-4">
+                <p class="text-sm font-medium text-theme-text mb-2">Startstrecke (benötigt vs. verfügbar)</p>
+                <div id="runway-visual">
+                    <div id="required-distance" class="bg-theme-accent flex items-center justify-center relative">
+                        <span id="runway-info" class="text-white text-xs font-bold text-shadow-sm absolute left-2"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -272,6 +314,7 @@
         const OPENWEATHERMAP_API_KEY = "d5f7c01fccc6586a908135deb9969a61";
 
         let currentTemp = null; 
+        let currentWindSpeed = 0;
         let combinedAirportData = {};
         let maxTakeoffWeight = null; // Speichert das von der KI gefundene MTOW
 
@@ -279,11 +322,11 @@
         const airportResultsDiv = document.getElementById('airport-results');
         const runwayInput = document.getElementById('runway_length');
         const altitudeInput = document.getElementById('altitude');
-        const tempDisplay = document.getElementById('temp-display');
-        const tempLoadingSpinner = document.getElementById('temp-loading-spinner');
+        const weatherDisplay = document.getElementById('weather-display');
+        const weatherLoadingSpinner = document.getElementById('weather-loading-spinner');
         const loadingIndicator = document.getElementById('loading-indicator');
         const form = document.getElementById('calculatorForm');
-
+        
         const aircraftNameInput = document.getElementById('aircraft_name_input');
         const searchAircraftBtn = document.getElementById('search_aircraft_btn');
         const aiInfoDisplay = document.getElementById('ai_info_display');
@@ -293,6 +336,12 @@
         const aiFuelWithGearSpan = document.getElementById('ai_fuel_with_gear');
         const aiFuelWithoutGearSpan = document.getElementById('ai_fuel_without_gear');
         const aircraftWeightInput = document.getElementById('aircraft_weight');
+        const mtowWarning = document.getElementById('mtow-warning');
+
+        const windDirectionSelect = document.getElementById('wind_direction');
+        const flapsSettingSelect = document.getElementById('flaps_setting');
+        const requiredDistanceVisual = document.getElementById('required-distance');
+        const runwayInfoSpan = document.getElementById('runway-info');
         
         const settingsBtn = document.getElementById('settings-btn');
         const themeDropdown = document.getElementById('theme-switcher-dropdown');
@@ -373,12 +422,12 @@
         }
 
         /**
-         * Ruft die aktuelle Temperatur für den ausgewählten Flughafen ab.
+         * Ruft die aktuelle Temperatur und Winddaten für den ausgewählten Flughafen ab.
          * @param {object} airport - Das Flughafenobjekt mit Stadt und Land.
          */
-        async function fetchTemperature(airport) {
-            tempDisplay.textContent = 'Lädt...';
-            tempLoadingSpinner.classList.remove('hidden');
+        async function fetchWeatherData(airport) {
+            weatherDisplay.textContent = 'Lädt...';
+            weatherLoadingSpinner.classList.remove('hidden');
 
             const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${airport.city},${airport.country}&appid=${OPENWEATHERMAP_API_KEY}&units=metric`;
 
@@ -389,20 +438,21 @@
                 }
                 const data = await response.json();
                 
-                // Überprüfen, ob die Datenstruktur korrekt ist
-                if (data && data.main && data.main.temp) {
+                if (data && data.main && data.main.temp && data.wind && data.wind.speed) {
                     currentTemp = data.main.temp;
-                    tempDisplay.textContent = `${currentTemp.toFixed(1)} °C`;
+                    currentWindSpeed = data.wind.speed; // in m/s
+                    weatherDisplay.textContent = `${currentTemp.toFixed(1)} °C, Wind: ${currentWindSpeed.toFixed(1)} m/s`;
                 } else {
-                    throw new Error('Ungültige API-Antwort.');
+                    throw new Error('Ungültige API-Antwort oder fehlende Daten.');
                 }
             } catch (error) {
-                console.error('Fehler beim Abrufen der Temperatur:', error);
-                displayMessage(`Temperatur konnte nicht geladen werden: ${error.message}`);
-                tempDisplay.textContent = 'Fehler beim Laden';
+                console.error('Fehler beim Abrufen der Wetterdaten:', error);
+                displayMessage(`Wetterdaten konnten nicht geladen werden: ${error.message}`);
+                weatherDisplay.textContent = 'Fehler beim Laden';
                 currentTemp = null;
+                currentWindSpeed = 0;
             } finally {
-                tempLoadingSpinner.classList.add('hidden');
+                weatherLoadingSpinner.classList.add('hidden');
             }
         }
 
@@ -422,6 +472,7 @@
             aiInfoDisplay.classList.add('hidden');
             aircraftWeightInput.value = '';
             maxTakeoffWeight = null;
+            mtowWarning.classList.add('hidden');
 
             let retryCount = 0;
             const maxRetries = 3;
@@ -429,8 +480,6 @@
             
             while (retryCount < maxRetries) {
                 try {
-                    // Der aktualisierte Prompt weist die KI an, die Informationen von Wikipedia zu finden.
-                    // Er fragt auch nach neuen Feldern.
                     const prompt = `Finden Sie auf der Wikipedia-Seite für das Flugzeug "${aircraftName}" die folgenden Informationen und geben Sie sie als JSON-Objekt zurück: 
                                     - maximales Startgewicht (MTOW) in kg
                                     - Triebwerksleistung (Schub) in lbs (Pfund)
@@ -455,7 +504,7 @@
                             }
                         }
                     };
-                    const apiKey = "AIzaSyBH1jxoVg6mkk1H4RGBMxtI_YqCU-u1fZQ";
+                    const apiKey = "";
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
                     const response = await fetch(apiUrl, {
@@ -466,7 +515,6 @@
 
                     if (!response.ok) {
                          if (response.status === 429) {
-                            // Too Many Requests, try again with exponential backoff
                             throw new Error('API limit reached. Retrying...');
                         }
                         throw new Error(`API-Fehler: ${response.statusText}`);
@@ -494,7 +542,6 @@
                         aiInfoDisplay.classList.add('hidden');
                     }
                     
-                    // Exit the loop on success
                     break; 
 
                 } catch (error) {
@@ -514,11 +561,48 @@
             searchAircraftBtn.textContent = 'Suchen';
         }
 
+        /**
+         * Validiert das eingegebene Gewicht in Echtzeit gegen das MTOW.
+         */
+        function validateWeight() {
+            const weight = parseFloat(aircraftWeightInput.value);
+            if (maxTakeoffWeight && weight > maxTakeoffWeight) {
+                mtowWarning.classList.remove('hidden');
+            } else {
+                mtowWarning.classList.add('hidden');
+            }
+        }
+        
+        /**
+         * Aktualisiert die visuelle Darstellung der Startstrecke.
+         * @param {number} requiredDistance - Die berechnete Startstrecke in Metern.
+         * @param {number} runwayLength - Die verfügbare Pistenlänge in Metern.
+         */
+        function updateTakeoffVisuals(requiredDistance, runwayLength) {
+            const percentage = Math.min((requiredDistance / runwayLength) * 100, 100);
+            
+            let colorClass = 'bg-theme-progress-good';
+            let message = `${requiredDistance.toFixed(0)} m benötigt`;
+            
+            if (percentage > 90) {
+                colorClass = 'bg-theme-progress-warning';
+                message += ' (Eng!)';
+            }
+            
+            requiredDistanceVisual.style.width = `${percentage}%`;
+            requiredDistanceVisual.className = `flex items-center justify-center relative ${colorClass}`;
+            runwayInfoSpan.textContent = message;
+            
+            if (requiredDistance > runwayLength) {
+                requiredDistanceVisual.classList.add('!bg-red-500'); // Rot bei Überschreitung
+                runwayInfoSpan.textContent = 'Piste nicht ausreichend!';
+            }
+        }
 
         // Event-Listener für die Flughafensuche
         airportSearchInput.addEventListener('input', function() {
             const query = this.value.toLowerCase();
-            airportResultsDiv.innerHTML = ''; // Vorherige Ergebnisse leeren
+            airportResultsDiv.innerHTML = ''; 
 
             if (query.length > 1) {
                 const filteredAirports = Object.keys(combinedAirportData).filter(key => 
@@ -532,17 +616,16 @@
                         const resultItem = document.createElement('div');
                         resultItem.textContent = `${airport.name} (${key})`;
                         resultItem.className = 'p-2 cursor-pointer bg-white text-gray-800 hover:bg-theme-info transition-colors duration-150';
-                        resultItem.dataset.key = key; // Speichere den Schlüssel
+                        resultItem.dataset.key = key; 
                         
-                        // Klick-Handler für das Suchergebnis
                         resultItem.addEventListener('click', () => {
                             runwayInput.value = airport.runway_length;
                             altitudeInput.value = airport.altitude;
-                            airportSearchInput.value = `${airport.name} (${key})`; // Setze den Namen im Suchfeld
-                            airportResultsDiv.classList.add('hidden'); // Ergebnisse ausblenden
+                            airportSearchInput.value = `${airport.name} (${key})`; 
+                            airportResultsDiv.classList.add('hidden'); 
                             
-                            // Rufe die Temperatur für den ausgewählten Flughafen ab
-                            fetchTemperature(airport);
+                            // Rufe die Temperatur und Winddaten ab
+                            fetchWeatherData(airport);
                         });
                         airportResultsDiv.appendChild(resultItem);
                     });
@@ -567,75 +650,77 @@
             searchAircraftWithAI(aircraftName);
         });
 
+        // Event-Listener für Echtzeit-MTOW-Validierung
+        aircraftWeightInput.addEventListener('input', validateWeight);
+
+
         // Event-Listener für das Berechnungsformular
         document.getElementById('calculatorForm').addEventListener('submit', function(event) {
-            event.preventDefault(); // Verhindert das Neuladen der Seite
+            event.preventDefault(); 
             
-            // Holen der Werte aus den Eingabefeldern
             const weight = parseFloat(document.getElementById('aircraft_weight').value);
             const runwayLength = parseFloat(document.getElementById('runway_length').value);
             const altitude = parseFloat(document.getElementById('altitude').value);
+            const enginePowerLbs = parseFloat(aiEnginePowerSpan.textContent); // Hole Triebwerksleistung von der KI
+            const windDirection = windDirectionSelect.value;
+            const flapsSetting = flapsSettingSelect.value;
 
-            // Überprüfen, ob alle Werte gültig sind und die Temperatur geladen wurde
-            if (isNaN(weight) || isNaN(runwayLength) || isNaN(altitude) || currentTemp === null) {
-                const errorMessage = 'Bitte geben Sie gültige Werte in alle Felder ein und wählen Sie einen Flughafen, um die Temperatur zu laden.';
+            if (isNaN(weight) || isNaN(runwayLength) || isNaN(altitude) || currentTemp === null || (maxTakeoffWeight && weight > maxTakeoffWeight) || isNaN(enginePowerLbs)) {
+                const errorMessage = 'Bitte geben Sie gültige Werte in alle Felder ein und wählen Sie einen Flughafen. Stellen Sie sicher, dass das Gewicht unter dem MTOW liegt und die Triebwerksdaten geladen sind.';
                 displayMessage(errorMessage);
                 return;
             }
-
-            // Zusätzliche Logik: Überprüfung, ob das eingegebene Gewicht das MTOW überschreitet
-            if (maxTakeoffWeight && weight > maxTakeoffWeight) {
-                displayMessage(`Achtung: Das eingegebene Gewicht (${weight} kg) ist größer als das maximale Startgewicht (${maxTakeoffWeight} kg)!`);
-                return; 
-            }
-
-            // --- Vereinfachte Berechnungslogik (NICHT für den realen Einsatz!) ---
-            // Einflussfaktoren:
-            // - Höheres Gewicht -> höhere Geschwindigkeiten
-            // - Höhere Temperatur und Höhe -> geringere Luftdichte -> längerer Startlauf und höhere Geschwindigkeiten
             
-            // Grundgeschwindigkeiten basierend auf dem Gewicht
-            const baseSpeed = 100 + (weight / 1000) * 0.5; // Vereinfachte Basisgeschwindigkeit in km/h
-
-            // Korrekturfaktoren für Temperatur und Höhe
-            const tempFactor = 1 + (currentTemp - 15) * 0.002; // Annahme: Standardtemperatur ist 15°C
-            const altitudeFactor = 1 + (altitude / 1000) * 0.005; // Annahme: Standardhöhe ist 0m
-
-            // Berechnungen der V-Geschwindigkeiten
-            const v1 = baseSpeed * tempFactor * altitudeFactor * 0.95;
-            const vr = baseSpeed * tempFactor * altitudeFactor * 1.0;
-            const v2 = baseSpeed * tempFactor * altitudeFactor * 1.05;
-
-            // Vereinfachte Abhebzeit-Berechnung (Annahme: konstante Beschleunigung)
-            // Umrechnung von km/h in m/s
-            const vr_ms = (vr * 1000) / 3600; 
-            // Angenommene Beschleunigung basierend auf dem Gewicht
-            const acceleration = 10 - (weight / 100000) * 2; // Vereinfachte Formel
-            const takeoffTime = vr_ms / acceleration;
-
-            // Hinzugefügte Logik: Überprüfung, ob die Startbahn ausreicht
-            // Die benötigte Startdistanz wird als halbe Strecke bei konstanter Beschleunigung berechnet
-            const requiredDistance = 0.5 * vr_ms * takeoffTime;
+            // --- Erweiterte Berechnungslogik ---
+            // Faktoren: Gewicht, Temperatur, Höhe, Wind, Klappenstellung
             
-            if (requiredDistance > runwayLength) {
-                displayMessage('Startbahn nicht ausreichend!');
-                return;
+            // Umrechnung von Triebwerksleistung (lbs) in eine Beschleunigungsbasis
+            const engineFactor = enginePowerLbs / 10000; // Normalisierung
+            
+            // Korrekturfaktoren für Dichte (Temperatur und Höhe)
+            const airDensityFactor = 1 - (currentTemp - 15) * 0.003 - (altitude / 1000) * 0.005;
+            
+            // Windfaktor (Wind in m/s)
+            let windFactor = 0;
+            if (windDirection === 'headwind') {
+                windFactor = 1 - (currentWindSpeed / 10); // Annahme: 10 m/s Wind halbiert die Zeit
+            } else if (windDirection === 'tailwind') {
+                windFactor = 1 + (currentWindSpeed / 10);
             }
+            
+            // Klappenfaktor
+            const flapsFactor = flapsSetting === 'takeoff' ? 1.0 : 0.9; // Annahme: Voll ausgefahren = schlechtere Leistung
+            
+            // Berechnungen der V-Geschwindigkeiten (in km/h)
+            const baseSpeed = 100 + (weight / 1000) * 0.5;
+            const v1 = baseSpeed * airDensityFactor * flapsFactor * (1 + windFactor) * 0.95;
+            const vr = baseSpeed * airDensityFactor * flapsFactor * (1 + windFactor) * 1.0;
+            const v2 = baseSpeed * airDensityFactor * flapsFactor * (1 + windFactor) * 1.05;
+
+            // Vereinfachte Abhebdistanz-Berechnung
+            // Die Beschleunigung wird nun von Triebwerksleistung, Gewicht, Dichte und Wind beeinflusst
+            const acceleration = (engineFactor * airDensityFactor) / (weight / 10000); // Gewicht normalisieren
+            const takeoffDistance = (vr * 1000 / 3600)**2 / (2 * acceleration);
+            
+            const takeoffTime = (vr * 1000 / 3600) / acceleration;
 
             // Ergebnisse auf zwei Dezimalstellen runden
             const v1Rounded = v1.toFixed(2);
             const vrRounded = vr.toFixed(2);
             const v2Rounded = v2.toFixed(2);
-            const takeoffTimeRounded = takeoffTime.toFixed(2);
-
+            const takeoffDistanceRounded = takeoffDistance.toFixed(0);
+            
             // Ergebnisse im HTML-Dokument anzeigen
             document.getElementById('v1-result').textContent = `${v1Rounded} km/h`;
             document.getElementById('vr-result').textContent = `${vrRounded} km/h`;
             document.getElementById('v2-result').textContent = `${v2Rounded} km/h`;
-            document.getElementById('takeoff-time-result').textContent = `${takeoffTimeRounded} s`;
+            document.getElementById('takeoff-distance-result').textContent = `${takeoffDistanceRounded} m`;
             
             // Den Ergebnisbereich einblenden
             document.getElementById('results').classList.remove('hidden');
+
+            // Visuelle Startstrecken-Anzeige aktualisieren
+            updateTakeoffVisuals(takeoffDistance, runwayLength);
         });
         
         // Funktion zur Anzeige von Nachrichten (ersetzt alert())
@@ -704,4 +789,3 @@
     </script>
 </body>
 </html>
-
