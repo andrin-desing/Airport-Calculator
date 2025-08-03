@@ -108,20 +108,49 @@
             justify-content: center;
         }
 
-        /* Style für die visuelle Startbahnleiste */
-        #runway-visual {
+        /* Container für die Runway-Visualisierung */
+        #runway-visual-container {
+            position: relative;
             width: 100%;
             height: 2rem;
-            background-color: #e5e7eb;
-            border-radius: 0.5rem;
+            background-color: #a0a0a0;
+            border: 2px solid #555;
+            border-radius: 0.25rem;
             overflow: hidden;
         }
-
-        #required-distance {
-            height: 100%;
-            transition: width 0.5s ease-in-out;
-            border-radius: 0.5rem 0 0 0.5rem;
+        /* Runway-Mittelstreifen-Stil */
+        #runway-centerline {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: white;
+            transform: translateY(-50%);
+            border-radius: 1px;
         }
+        /* Stil für die visuellen Marker */
+        .runway-marker {
+            position: absolute;
+            top: 50%;
+            height: 100%;
+            width: 5px;
+            background-color: white;
+            transform: translateY(-50%);
+        }
+        #required-distance {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            transition: width 0.5s ease-in-out;
+            border-radius: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
     </style>
 </head>
 <body class="bg-theme-bg flex items-center justify-center min-h-screen p-4">
@@ -314,8 +343,20 @@
             <!-- Visuelle Darstellung der Startstrecke -->
             <div class="mt-4">
                 <p class="text-sm font-medium text-theme-text mb-2">Startstrecke (benötigt vs. verfügbar)</p>
-                <div id="runway-visual">
-                    <div id="required-distance" class="bg-theme-accent flex items-center justify-center relative">
+                <div id="runway-visual-container">
+                    <div id="runway-centerline"></div>
+                    <div class="runway-marker" style="left: 0;"></div>
+                    <div class="runway-marker" style="left: 10%;"></div>
+                    <div class="runway-marker" style="left: 20%;"></div>
+                    <div class="runway-marker" style="left: 30%;"></div>
+                    <div class="runway-marker" style="left: 40%;"></div>
+                    <div class="runway-marker" style="left: 50%;"></div>
+                    <div class="runway-marker" style="left: 60%;"></div>
+                    <div class="runway-marker" style="left: 70%;"></div>
+                    <div class="runway-marker" style="left: 80%;"></div>
+                    <div class="runway-marker" style="left: 90%;"></div>
+                    <div class="runway-marker" style="right: 0;"></div>
+                    <div id="required-distance" class="bg-theme-accent">
                         <span id="runway-info" class="text-white text-xs font-bold text-shadow-sm absolute left-2"></span>
                     </div>
                 </div>
@@ -495,8 +536,8 @@
             while (retryCount < maxRetries) {
                 try {
                     const prompt = `Finden Sie auf der Wikipedia-Seite für das Flugzeug "${aircraftName}" die folgenden Informationen und geben Sie sie als JSON-Objekt zurück: 
-                                    - maximales Startgewicht (MTOW) in kg und (t)
-                                    - Triebwerksleistung (Schub) in kg (Kilogramm)
+                                    - maximales Startgewicht (MTOW) in kg
+                                    - Triebwerksleistung (Schub) in lbs (Pfund)
                                     - Kraftstoffverbrauch (mit ausgefahrenem Fahrwerk) in Litern pro Stunde
                                     - Kraftstoffverbrauch (mit eingefahrenem Fahrwerk) in Litern pro Stunde
                                     Wenn Sie eine Information nicht finden können, setzen Sie den Wert auf -1. Beispiel für die Ausgabe: {"model": "Airbus A320", "mtow_kg": 78000, "engine_power_lbs": 27000, "fuel_consumption_with_gear_l_per_hour": 5000, "fuel_consumption_without_gear_l_per_hour": 3000}`;
@@ -602,16 +643,15 @@
             
             if (percentage > 90) {
                 colorClass = 'bg-theme-progress-warning';
-                message += ' (Eng!)';
             }
             
             requiredDistanceVisual.style.width = `${percentage}%`;
-            requiredDistanceVisual.className = `flex items-center justify-center relative ${colorClass}`;
+            requiredDistanceVisual.className = `absolute left-0 top-0 h-full transition-width duration-500 ease-in-out flex items-center justify-center relative rounded-md ${colorClass}`;
             runwayInfoSpan.textContent = message;
             
             if (requiredDistance > runwayLength) {
                 requiredDistanceVisual.classList.add('!bg-red-500'); // Rot bei Überschreitung
-                runwayInfoSpan.textContent = 'Piste nicht ausreichend!';
+                runwayInfoSpan.textContent = `Piste nicht ausreichend! (${requiredDistance.toFixed(0)}m benötigt)`;
             }
         }
 
