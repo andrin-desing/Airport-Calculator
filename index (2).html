@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flugstart-Rechner</title>
+    <!-- Tailwind CSS CDN für das Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Eigene Styles für eine ansprechende Darstellung */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Style für die Suchergebnisliste */
+        .search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Hauptcontainer für die Anwendung -->
+    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full transform transition-all hover:scale-105 duration-300">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">🛫 Flugstart-Rechner</h1>
+        <p class="text-center text-gray-600 mb-8">
+            Simulieren Sie die wichtigsten Startgeschwindigkeiten (V1, VR, V2) und die Abhebzeit.
+            Die Berechnungen basieren auf vereinfachten Formeln.
+        </p>
+        
+        <!-- Lade-Indikator während die Daten geladen werden -->
+        <div id="loading-indicator" class="text-center py-4 text-gray-500 hidden">
+            <div class="flex items-center justify-center space-x-2">
+                <div class="animate-spin h-5 w-5 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+                <span>Lade Flughafendaten...</span>
+            </div>
+        </div>
+
+        <!-- Formular für die Eingaben -->
+        <form id="calculatorForm" class="space-y-6">
+            <!-- Eingabefeld für das Flugzeuggewicht -->
+            <div>
+                <label for="aircraft_weight" class="block text-sm font-medium text-gray-700">Flugzeuggewicht (in kg)</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <input type="number" id="aircraft_weight" name="aircraft_weight" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" placeholder="z.B. 75000">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span class="text-gray-500 sm:text-sm">
+                            kg
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Eingabefeld für die Flughafensuche -->
+            <div>
+                <label for="airport_search" class="block text-sm font-medium text-gray-700">Flughafen suchen</label>
+                <div class="mt-1 relative">
+                    <input type="text" id="airport_search" name="airport_search" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" placeholder="z.B. Frankfurt oder Berlin">
+                    <!-- Container für die Suchergebnisse -->
+                    <div id="airport-results" class="absolute z-10 w-full bg-white shadow-lg rounded-md mt-1 border border-gray-200 hidden search-results"></div>
+                </div>
+            </div>
+
+            <!-- Eingabefeld für die Startbahnlänge -->
+            <div>
+                <label for="runway_length" class="block text-sm font-medium text-gray-700">Startbahnlänge (in m)</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <input type="number" id="runway_length" name="runway_length" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" placeholder="z.B. 3000" readonly>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span class="text-gray-500 sm:text-sm">
+                            m
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Anzeige der automatisch geladenen Temperatur -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Außentemperatur</label>
+                <div class="mt-1 flex items-center justify-between bg-gray-50 p-3 rounded-lg shadow-sm">
+                    <span id="temp-display" class="font-bold text-gray-700">Wählen Sie einen Flughafen...</span>
+                    <span id="temp-loading-spinner" class="animate-spin h-5 w-5 text-indigo-500 hidden">
+                        <svg class="h-full w-full" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Eingabefeld für die Höhe -->
+            <div>
+                <label for="altitude" class="block text-sm font-medium text-gray-700">Höhe (in m)</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <input type="number" id="altitude" name="altitude" class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" placeholder="z.B. 500" readonly>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span class="text-gray-500 sm:text-sm">
+                            m
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Schaltfläche für die Berechnung -->
+            <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200 ease-in-out">
+                Berechnen
+            </button>
+        </form>
+
+        <!-- Bereich zur Anzeige der Ergebnisse -->
+        <div id="results" class="mt-8 pt-6 border-t-2 border-gray-200 space-y-4 hidden">
+            <h2 class="text-2xl font-semibold text-center text-gray-800">Ergebnisse</h2>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg shadow-sm">
+                    <span class="font-medium text-gray-700">V1 (Entscheidungsgeschwindigkeit):</span>
+                    <span id="v1-result" class="text-indigo-600 font-bold text-xl">-- km/h</span>
+                </div>
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg shadow-sm">
+                    <span class="font-medium text-gray-700">VR (Rotationsgeschwindigkeit):</span>
+                    <span id="vr-result" class="text-indigo-600 font-bold text-xl">-- km/h</span>
+                </div>
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg shadow-sm">
+                    <span class="font-medium text-gray-700">V2 (Sichere Startsteiggeschwindigkeit):</span>
+                    <span id="v2-result" class="text-indigo-600 font-bold text-xl">-- km/h</span>
+                </div>
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg shadow-sm">
+                    <span class="font-medium text-gray-700">Abhebzeit:</span>
+                    <span id="takeoff-time-result" class="text-indigo-600 font-bold text-xl">-- s</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript für die Berechnungslogik -->
+    <script>
+        // API-Schlüssel für OpenWeatherMap
+        const OPENWEATHERMAP_API_KEY = "d5f7c01fccc6586a908135deb9969a61";
+        // API-Schlüssel für openaip.net (nicht verwendet, da Daten aus CSV-Dateien stammen)
+        const OPENAIP_API_KEY = "87ce3189b3d00f8dcd45e41352fc5efe";
+
+        let currentTemp = null; // Speichert die zuletzt geladene Temperatur
+        let combinedAirportData = {}; // Speichert die kombinierten Daten aus den CSVs
+
+        const airportSearchInput = document.getElementById('airport_search');
+        const airportResultsDiv = document.getElementById('airport-results');
+        const runwayInput = document.getElementById('runway_length');
+        const altitudeInput = document.getElementById('altitude');
+        const tempDisplay = document.getElementById('temp-display');
+        const tempLoadingSpinner = document.getElementById('temp-loading-spinner');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const form = document.getElementById('calculatorForm');
+
+        /**
+         * Ruft die CSV-Dateien ab, parst sie und kombiniert die Daten.
+         */
+        async function loadAirportData() {
+            loadingIndicator.classList.remove('hidden');
+            form.classList.add('hidden');
+            
+            try {
+                // Fetch and parse airports.csv
+                const airportsResponse = await fetch('airports.csv');
+                const airportsText = await airportsResponse.text();
+                const airports = parseCSV(airportsText);
+                
+                // Fetch and parse runways.csv
+                const runwaysResponse = await fetch('runways.csv');
+                const runwaysText = await runwaysResponse.text();
+                const runways = parseCSV(runwaysText);
+
+                // Kombinieren der Daten
+                const runwaysMap = new Map();
+                runways.forEach(r => {
+                    const length_ft = parseFloat(r.length_ft);
+                    if (!isNaN(length_ft)) {
+                         // Finden Sie die längste Startbahn für jeden Flughafen
+                        if (!runwaysMap.has(r.airport_ident) || runwaysMap.get(r.airport_ident) < length_ft) {
+                            runwaysMap.set(r.airport_ident, length_ft);
+                        }
+                    }
+                });
+
+                // Kombinieren von Flughäfen und Startbahnen
+                airports.forEach(a => {
+                    const icao_code = a.icao_code.toUpperCase();
+                    const runwayLengthFt = runwaysMap.get(icao_code);
+                    const altitude_ft = parseFloat(a.elevation_ft);
+                    
+                    if (runwayLengthFt && !isNaN(altitude_ft)) {
+                        // Konvertieren von Fuß in Meter (1 ft = 0.3048 m)
+                        const runwayLengthM = (runwayLengthFt * 0.3048).toFixed(0);
+                        const altitudeM = (altitude_ft * 0.3048).toFixed(0);
+                        
+                        combinedAirportData[icao_code] = {
+                            name: a.name,
+                            runway_length: runwayLengthM,
+                            altitude: altitudeM,
+                            city: a.municipality,
+                            country: a.iso_country
+                        };
+                    }
+                });
+                
+                loadingIndicator.classList.add('hidden');
+                form.classList.remove('hidden');
+                console.log('Flughafendaten erfolgreich geladen und verarbeitet.', combinedAirportData);
+
+            } catch (error) {
+                console.error('Fehler beim Laden der CSV-Daten:', error);
+                displayMessage('Fehler beim Laden der Flughafendaten. Bitte versuchen Sie es erneut.');
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+        
+        // Einfacher CSV-Parser
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.replace(/"/g, ''));
+            return lines.slice(1).map(line => {
+                const values = line.split(',').map(v => v.replace(/"/g, ''));
+                return headers.reduce((obj, header, index) => {
+                    obj[header] = values[index];
+                    return obj;
+                }, {});
+            });
+        }
+
+        /**
+         * Ruft die aktuelle Temperatur für den ausgewählten Flughafen ab.
+         * @param {object} airport - Das Flughafenobjekt mit Stadt und Land.
+         */
+        async function fetchTemperature(airport) {
+            tempDisplay.textContent = 'Lädt...';
+            tempLoadingSpinner.classList.remove('hidden');
+
+            const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${airport.city},${airport.country}&appid=${OPENWEATHERMAP_API_KEY}&units=metric`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`API Fehler: ${response.statusText}`);
+                }
+                const data = await response.json();
+                
+                // Überprüfen, ob die Datenstruktur korrekt ist
+                if (data && data.main && data.main.temp) {
+                    currentTemp = data.main.temp;
+                    tempDisplay.textContent = `${currentTemp.toFixed(1)} °C`;
+                } else {
+                    throw new Error('Ungültige API-Antwort.');
+                }
+            } catch (error) {
+                console.error('Fehler beim Abrufen der Temperatur:', error);
+                displayMessage(`Temperatur konnte nicht geladen werden: ${error.message}`);
+                tempDisplay.textContent = 'Fehler beim Laden';
+                currentTemp = null;
+            } finally {
+                tempLoadingSpinner.classList.add('hidden');
+            }
+        }
+
+        // Event-Listener für die Flughafensuche
+        airportSearchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            airportResultsDiv.innerHTML = ''; // Vorherige Ergebnisse leeren
+
+            if (query.length > 1) {
+                const filteredAirports = Object.keys(combinedAirportData).filter(key => 
+                    combinedAirportData[key].name.toLowerCase().includes(query) || key.toLowerCase().includes(query)
+                );
+
+                if (filteredAirports.length > 0) {
+                    airportResultsDiv.classList.remove('hidden');
+                    filteredAirports.slice(0, 10).forEach(key => {
+                        const airport = combinedAirportData[key];
+                        const resultItem = document.createElement('div');
+                        resultItem.textContent = `${airport.name} (${key})`;
+                        resultItem.className = 'p-2 cursor-pointer hover:bg-indigo-100 transition-colors duration-150';
+                        resultItem.dataset.key = key; // Speichere den Schlüssel
+                        
+                        // Klick-Handler für das Suchergebnis
+                        resultItem.addEventListener('click', () => {
+                            runwayInput.value = airport.runway_length;
+                            altitudeInput.value = airport.altitude;
+                            airportSearchInput.value = `${airport.name} (${key})`; // Setze den Namen im Suchfeld
+                            airportResultsDiv.classList.add('hidden'); // Ergebnisse ausblenden
+                            
+                            // Rufe die Temperatur für den ausgewählten Flughafen ab
+                            fetchTemperature(airport);
+                        });
+                        airportResultsDiv.appendChild(resultItem);
+                    });
+                } else {
+                    airportResultsDiv.classList.add('hidden');
+                }
+            } else {
+                airportResultsDiv.classList.add('hidden');
+            }
+        });
+        
+        // Klick-Handler außerhalb der Ergebnisliste, um sie zu schließen
+        document.addEventListener('click', function(event) {
+            if (!airportSearchInput.contains(event.target) && !airportResultsDiv.contains(event.target)) {
+                airportResultsDiv.classList.add('hidden');
+            }
+        });
+
+        // Event-Listener für das Berechnungsformular
+        document.getElementById('calculatorForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Verhindert das Neuladen der Seite
+            
+            // Holen der Werte aus den Eingabefeldern
+            const weight = parseFloat(document.getElementById('aircraft_weight').value);
+            const runwayLength = parseFloat(document.getElementById('runway_length').value);
+            const altitude = parseFloat(document.getElementById('altitude').value);
+
+            // Überprüfen, ob alle Werte gültig sind und die Temperatur geladen wurde
+            if (isNaN(weight) || isNaN(runwayLength) || isNaN(altitude) || currentTemp === null) {
+                const errorMessage = 'Bitte geben Sie gültige Werte in alle Felder ein und wählen Sie einen Flughafen, um die Temperatur zu laden.';
+                displayMessage(errorMessage);
+                return;
+            }
+
+            // --- Vereinfachte Berechnungslogik (NICHT für den realen Einsatz!) ---
+            // Einflussfaktoren:
+            // - Höheres Gewicht -> höhere Geschwindigkeiten
+            // - Höhere Temperatur und Höhe -> geringere Luftdichte -> längerer Startlauf und höhere Geschwindigkeiten
+            
+            // Grundgeschwindigkeiten basierend auf dem Gewicht
+            const baseSpeed = 100 + (weight / 1000) * 0.5; // Vereinfachte Basisgeschwindigkeit in km/h
+
+            // Korrekturfaktoren für Temperatur und Höhe
+            const tempFactor = 1 + (currentTemp - 15) * 0.002; // Annahme: Standardtemperatur ist 15°C
+            const altitudeFactor = 1 + (altitude / 1000) * 0.005; // Annahme: Standardhöhe ist 0m
+
+            // Berechnungen der V-Geschwindigkeiten
+            const v1 = baseSpeed * tempFactor * altitudeFactor * 0.95;
+            const vr = baseSpeed * tempFactor * altitudeFactor * 1.0;
+            const v2 = baseSpeed * tempFactor * altitudeFactor * 1.05;
+
+            // Vereinfachte Abhebzeit-Berechnung (Annahme: konstante Beschleunigung)
+            // Umrechnung von km/h in m/s
+            const vr_ms = (vr * 1000) / 3600; 
+            // Angenommene Beschleunigung basierend auf dem Gewicht
+            const acceleration = 10 - (weight / 100000) * 2; // Vereinfachte Formel
+            const takeoffTime = vr_ms / acceleration;
+
+            // Ergebnisse auf zwei Dezimalstellen runden
+            const v1Rounded = v1.toFixed(2);
+            const vrRounded = vr.toFixed(2);
+            const v2Rounded = v2.toFixed(2);
+            const takeoffTimeRounded = takeoffTime.toFixed(2);
+
+            // Ergebnisse im HTML-Dokument anzeigen
+            document.getElementById('v1-result').textContent = `${v1Rounded} km/h`;
+            document.getElementById('vr-result').textContent = `${vrRounded} km/h`;
+            document.getElementById('v2-result').textContent = `${v2Rounded} km/h`;
+            document.getElementById('takeoff-time-result').textContent = `${takeoffTimeRounded} s`;
+            
+            // Den Ergebnisbereich einblenden
+            document.getElementById('results').classList.remove('hidden');
+        });
+        
+        // Fügt eine Animation zum Formular hinzu, wenn der Fokus darauf liegt
+        const formInputs = document.querySelectorAll('#calculatorForm input');
+        formInputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentNode.parentNode.classList.add('ring-2', 'ring-indigo-500', 'ring-offset-2');
+            });
+            input.addEventListener('blur', () => {
+                input.parentNode.parentNode.classList.remove('ring-2', 'ring-indigo-500', 'ring-offset-2');
+            });
+        });
+        
+        // Funktion zur Anzeige von Nachrichten (ersetzt alert())
+        function displayMessage(message) {
+            let messageBox = document.getElementById('message-box');
+            if (!messageBox) {
+                messageBox = document.createElement('div');
+                messageBox.id = 'message-box';
+                messageBox.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 p-4 bg-red-500 text-white rounded-lg shadow-lg z-50 transition-opacity duration-300';
+                document.body.appendChild(messageBox);
+            }
+            messageBox.textContent = message;
+            messageBox.style.opacity = '1';
+            setTimeout(() => {
+                messageBox.style.opacity = '0';
+            }, 3000);
+        }
+
+        // Starte den Ladevorgang, wenn das Dokument geladen ist
+        document.addEventListener('DOMContentLoaded', loadAirportData);
+    </script>
+</body>
+</html>
